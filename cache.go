@@ -275,6 +275,41 @@ func (c *cache) IncrementInt(k string, n int) (int, error) {
 	return nv, nil
 }
 
+// IncrementOrSetInt does the same as IncrementInt but if key is not found,
+// it sets it with a value of n
+func (c *cache) IncrementOrSetInt(k string, n int, d time.Duration) (int, error) {
+	c.mu.Lock()
+	v, found := c.items[k]
+	if !found || v.Expired() {
+		// Sets the value to 0.
+		// Code taken from func Set()
+		var e int64
+		if d == DefaultExpiration {
+			d = c.defaultExpiration
+		}
+		if d > 0 {
+			e = time.Now().Add(d).UnixNano()
+		}
+
+		c.items[k] = Item{
+			Object:     0,
+			Expiration: e,
+		}
+
+		v, found = c.items[k]
+	}
+	rv, ok := v.Object.(int)
+	if !ok {
+		c.mu.Unlock()
+		return 0, fmt.Errorf("The value for %s is not an int", k)
+	}
+	nv := rv + n
+	v.Object = nv
+	c.items[k] = v
+	c.mu.Unlock()
+	return nv, nil
+}
+
 // Increment an item of type int8 by n. Returns an error if the item's value is
 // not an int8, or if it was not found. If there is no error, the incremented
 // value is returned.

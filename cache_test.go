@@ -656,6 +656,43 @@ func TestIncrementInt(t *testing.T) {
 	}
 }
 
+func TestIncrementOrSetIntWithPreviousVal(t *testing.T) {
+	tc := New(DefaultExpiration, 0)
+	tc.Set("tint", 1, DefaultExpiration)
+	n, err := tc.IncrementOrSetInt("tint", 2, DefaultExpiration)
+	if err != nil {
+		t.Error("Error incrementing:", err)
+	}
+	if n != 3 {
+		t.Error("Returned number is not 3:", n)
+	}
+	x, found := tc.Get("tint")
+	if !found {
+		t.Error("tint was not found")
+	}
+	if x.(int) != 3 {
+		t.Error("tint is not 3:", x)
+	}
+}
+
+func TestIncrementOrSetIntWithNoPreviousVal(t *testing.T) {
+	tc := New(DefaultExpiration, 0)
+	n, err := tc.IncrementOrSetInt("tint", 3, DefaultExpiration)
+	if err != nil {
+		t.Error("Error incrementing:", err)
+	}
+	if n != 3 {
+		t.Error("Returned number is not 3:", n)
+	}
+	x, found := tc.Get("tint")
+	if !found {
+		t.Error("tint was not found")
+	}
+	if x.(int) != 3 {
+		t.Error("tint is not 3:", x)
+	}
+}
+
 func TestIncrementInt8(t *testing.T) {
 	tc := New(DefaultExpiration, 0)
 	tc.Set("tint8", int8(1), DefaultExpiration)
